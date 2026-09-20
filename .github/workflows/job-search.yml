@@ -27,6 +27,8 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run job agent
+        env:
+          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
         run: python agent.py
 
       - name: Upload weekly job report
@@ -36,4 +38,6 @@ jobs:
           path: |
             weekly_jobs.md
             job_search_plan.md
+            job_results.json
+            job_search_results.md
           if-no-files-found: error
