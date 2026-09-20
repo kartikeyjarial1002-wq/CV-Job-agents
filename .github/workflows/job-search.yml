@@ -45,6 +45,8 @@ jobs:
 
           git commit -m "Update weekly job search report"
 
-          git pull --rebase origin main
+          git fetch origin main
 
-          git push origin main
+          git rebase origin/main
+
+          git push origin HEAD:main
