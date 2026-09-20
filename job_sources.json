@@ -1,0 +1,83 @@
+{
+  "sources": [
+    {
+      "name": "LinkedIn",
+      "type": "search_engine",
+      "enabled": true,
+      "queries": [
+        "mental health project manager India",
+        "mental health program manager India",
+        "mental health project coordinator India",
+        "clinical psychologist project manager India",
+        "mental health program coordinator India",
+        "CSR mental health project manager India",
+        "employee mental health program manager India",
+        "mental health social impact manager India"
+      ]
+    },
+    {
+      "name": "Indeed",
+      "type": "search_engine",
+      "enabled": true,
+      "queries": [
+        "mental health project manager",
+        "mental health program manager",
+        "mental health project coordinator",
+        "clinical psychologist project manager",
+        "CSR program manager mental health",
+        "mental health program coordinator"
+      ]
+    },
+    {
+      "name": "Naukri",
+      "type": "search_engine",
+      "enabled": true,
+      "queries": [
+        "mental health project manager",
+        "mental health program manager",
+        "clinical psychologist project manager",
+        "CSR project manager mental health",
+        "mental health program coordinator",
+        "mental health program manager Delhi NCR"
+      ]
+    },
+    {
+      "name": "CSRBOX",
+      "type": "search_engine",
+      "enabled": true,
+      "queries": [
+        "mental health",
+        "mental health project manager",
+        "CSR mental health",
+        "social impact mental health",
+        "program manager mental health"
+      ]
+    },
+    {
+      "name": "DevNet",
+      "type": "search_engine",
+      "enabled": true,
+      "queries": [
+        "mental health project",
+        "mental health program",
+        "project manager mental health",
+        "program manager mental health",
+        "social impact mental health",
+        "NGO mental health"
+      ]
+    },
+    {
+      "name": "Government",
+      "type": "search_engine",
+      "enabled": true,
+      "queries": [
+        "site:gov.in mental health project manager",
+        "site:gov.in mental health program manager",
+        "site:gov.in clinical psychologist recruitment",
+        "site:gov.in mental health project coordinator",
+        "site:gov.in psychologist project",
+        "site:nic.in mental health recruitment"
+      ]
+    }
+  ]
+}
