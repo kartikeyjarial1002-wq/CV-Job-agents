@@ -1,6 +1,11 @@
 import json
+import os
 from pathlib import Path
-from urllib.parse import quote
+
+import requests
+
+
+TAVILY_API_URL = "https://api.tavily.com/search"
 
 
 def load_sources():
@@ -15,60 +20,37 @@ def load_sources():
         return json.load(file)
 
 
-def build_search_url(source_name, query):
-    encoded_query = quote(query)
+def search_tavily(query, max_results=5):
+    api_key = os.getenv("TAVILY_API_KEY")
 
-    if source_name == "LinkedIn":
-        return (
-            "https://www.google.com/search?q="
-            "site%3Alinkedin.com%2Fjobs%2F+"
-            + encoded_query
+    if not api_key:
+        raise RuntimeError(
+            "TAVILY_API_KEY environment variable was not found."
         )
 
-    if source_name == "Indeed":
-        return (
-            "https://www.google.com/search?q="
-            "site%3Aindeed.com%2Fviewjob+"
-            + encoded_query
-        )
+    payload = {
+        "api_key": api_key,
+        "query": query,
+        "search_depth": "basic",
+        "max_results": max_results,
+        "include_answer": False
+    }
 
-    if source_name == "Naukri":
-        return (
-            "https://www.google.com/search?q="
-            "site%3Anaukri.com%2Fjob-listings+"
-            + encoded_query
-        )
-
-    if source_name == "CSRBOX":
-        return (
-            "https://www.google.com/search?q="
-            "site%3Acsrbox.org+"
-            + encoded_query
-        )
-
-    if source_name == "DevNet":
-        return (
-            "https://www.google.com/search?q="
-            "site%3Adevnetjobsindia.org+"
-            + encoded_query
-        )
-
-    if source_name == "Government":
-        return (
-            "https://www.google.com/search?q="
-            + encoded_query
-        )
-
-    return (
-        "https://www.google.com/search?q="
-        + encoded_query
+    response = requests.post(
+        TAVILY_API_URL,
+        json=payload,
+        timeout=60
     )
 
+    response.raise_for_status()
 
-def generate_searches():
+    return response.json()
+
+
+def collect_jobs():
     configuration = load_sources()
 
-    searches = []
+    all_results = []
 
     for source in configuration["sources"]:
 
@@ -79,52 +61,142 @@ def generate_searches():
 
         for query in source["queries"]:
 
-            searches.append(
-                {
-                    "source": source_name,
-                    "query": query,
-                    "search_url": build_search_url(
-                        source_name,
-                        query
-                    )
-                }
+            print(
+                f"Searching {source_name}: {query}"
             )
 
-    return searches
+            search_query = query
+
+            data = search_tavily(
+                search_query,
+                max_results=5
+            )
+
+            results = data.get("results", [])
+
+            for result in results:
+
+                all_results.append(
+                    {
+                        "source": source_name,
+                        "query": query,
+                        "title": result.get(
+                            "title",
+                            ""
+                        ),
+                        "url": result.get(
+                            "url",
+                            ""
+                        ),
+                        "content": result.get(
+                            "content",
+                            ""
+                        ),
+                        "score": result.get(
+                            "score",
+                            0
+                        )
+                    }
+                )
+
+    return all_results
 
 
-def save_search_plan(searches):
+def remove_duplicates(results):
 
-    output = Path("job_search_plan.md")
+    unique = {}
+
+    for result in results:
+
+        url = result.get("url", "").strip()
+
+        if not url:
+            continue
+
+        if url not in unique:
+            unique[url] = result
+
+    return list(unique.values())
+
+
+def save_results(results):
+
+    output = Path("job_results.json")
+
+    with open(
+        output,
+        "w",
+        encoding="utf-8"
+    ) as file:
+
+        json.dump(
+            results,
+            file,
+            indent=2,
+            ensure_ascii=False
+        )
+
+
+def create_report(results):
+
+    output = Path("job_search_results.md")
 
     lines = [
-        "# Job Search Plan",
+        "# Job Search Results",
         "",
-        "Searches configured for the weekly job agent.",
-        ""
+        f"Total unique results: **{len(results)}**",
+        "",
     ]
 
-    current_source = None
-
-    for search in searches:
-
-        if search["source"] != current_source:
-
-            current_source = search["source"]
-
-            lines.append(
-                f"## {current_source}"
-            )
-
-            lines.append("")
+    for index, result in enumerate(
+        results,
+        start=1
+    ):
 
         lines.append(
-            f"- **{search['query']}**"
+            f"## {index}. {result['title']}"
         )
 
+        lines.append("")
+
         lines.append(
-            f"  - Search: {search['search_url']}"
+            f"**Source:** {result['source']}"
         )
+
+        lines.append("")
+
+        lines.append(
+            f"**Search query:** {result['query']}"
+        )
+
+        lines.append("")
+
+        lines.append(
+            f"**URL:** {result['url']}"
+        )
+
+        lines.append("")
+
+        lines.append(
+            f"**Search relevance score:** "
+            f"{result['score']}"
+        )
+
+        lines.append("")
+
+        lines.append(
+            "**Description / Search snippet:**"
+        )
+
+        lines.append("")
+
+        lines.append(
+            result["content"]
+        )
+
+        lines.append("")
+
+        lines.append("---")
 
         lines.append("")
 
@@ -136,18 +208,27 @@ def save_search_plan(searches):
 
 def main():
 
-    print("Starting job search engine...")
+    print("Starting live job search...")
 
-    searches = generate_searches()
+    results = collect_jobs()
 
     print(
-        f"Generated {len(searches)} search queries."
+        f"Collected {len(results)} raw results."
     )
 
-    save_search_plan(searches)
+    results = remove_duplicates(results)
 
     print(
-        "Job search plan created successfully."
+        f"After removing duplicates: "
+        f"{len(results)} results."
+    )
+
+    save_results(results)
+
+    create_report(results)
+
+    print(
+        "Job search results saved successfully."
     )
 
 
