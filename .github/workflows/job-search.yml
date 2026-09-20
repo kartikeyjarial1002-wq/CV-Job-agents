@@ -6,7 +6,7 @@ on:
     - cron: "30 4 * * 1"
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   search:
@@ -15,8 +15,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -31,22 +29,11 @@ jobs:
       - name: Run job agent
         run: python agent.py
 
-      - name: Save report
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          git add weekly_jobs.md job_search_plan.md
-
-          if git diff --cached --quiet; then
-            echo "No changes to commit."
-            exit 0
-          fi
-
-          git commit -m "Update weekly job search report"
-
-          git fetch origin main
-
-          git rebase origin/main
-
-          git push origin HEAD:main
+      - name: Upload weekly job report
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-job-report
+          path: |
+            weekly_jobs.md
+            job_search_plan.md
+          if-no-files-found: error
